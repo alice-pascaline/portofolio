@@ -20,8 +20,17 @@ const Contact = () => {
     setIsSubmitting(true)
     setError('')
     
-    console.log('Form submitted with data:', data) // Debug form data
-    console.log('Current form state:', { name: watch('name'), email: watch('email'), subject: watch('subject'), message: watch('message') }) // Debug current state
+    // Check if running in production without backend
+    if (import.meta.env.MODE === 'production' && !import.meta.env.VITE_API_URL) {
+      // Frontend-only deployment - show success message with contact info
+      toast.success('Thank you for your message! Please contact me directly via email or phone.')
+      reset()
+      setIsSubmitting(false)
+      return
+    }
+    
+    console.log('Form submitted with data:', data)
+    console.log('Current form state:', { name: watch('name'), email: watch('email'), subject: watch('subject'), message: watch('message') })
     
     try {
       const response = await api.post('/api/contact', data)
@@ -32,6 +41,12 @@ const Contact = () => {
       }
     } catch (error) {
       console.error('Contact form error:', error)
+      
+      if (error.message === 'API not available in frontend-only deployment') {
+        toast.success('Thank you for your message! Please contact me directly via email or phone.')
+        reset()
+        return
+      }
       
       if (error.response?.data?.message) {
         toast.error(error.response.data.message)
